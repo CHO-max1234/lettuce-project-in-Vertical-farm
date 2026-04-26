@@ -1,4 +1,5 @@
 🥬 Lettuce Project in a Vertical Farm
+
 📌 Overview
 
 This project focuses on developing an image-based analysis pipeline for lettuce growth and heading stage detection in a rotating vertical farming system.
@@ -16,6 +17,7 @@ detect heading (core formation) stages
 support real-world decision-making in smart farms
 
 
+
 👨‍🔬 About Me
 
 I am an agricultural researcher with ~3 years of experience in applied data analysis and “vibe coding.”
@@ -24,6 +26,7 @@ I previously completed a Ph.D. focused on multimodal imaging (RGB, Depth, Therma
 Now, I am exploring a smaller but highly practical project:
 👉 applying image-based analysis to lettuce in vertical farms,
 with a strong focus on pipeline design, generalization, and real-world applicability.
+
 
 
 🌱 Vertical Farm Structure
@@ -42,7 +45,12 @@ This setup makes the problem significantly harder than standard image datasets, 
 segmentation consistency
 spatial alignment (warp & scale)
 plant-level tracking
+
+
+
 📂 Project Structure
+
+
 🟢 Top View Analysis (양상추 윗면 1작기)
 This module focuses on top-view image analysis, which provides a relatively stable and reliable perspective.
 
@@ -56,6 +64,7 @@ Top-view data is less affected by occlusion and perspective distortion, making i
 early-stage growth analysis
 time-series trend extraction
 validation of overall plant health
+
 
 🔵 Front View Analysis – 1st Crop (양상추 정면 1작기)
 This is the initial attempt to build a full pipeline for front-view analysis.
@@ -72,8 +81,10 @@ Over-segmentation (multiple instances per plant)
 Unstable slot assignment across time
 Noisy area-based metrics
 
+
 👉 Conclusion:
 A full pipeline was successfully constructed, but metric reliability and structural consistency were insufficient.
+
 
 🟡 Front View Analysis – 1.5 Crop (양상추 정면 1.5작기)
 This phase focuses on improving the weaknesses of the 1st crop pipeline.
@@ -93,6 +104,7 @@ Hybrid approach (algorithm + deep learning) is necessary
 
 👉 This stage represents a conceptual transition toward core-based modeling.
 
+
 🔴 Front View Analysis – 2nd Crop (양상추 정면 2작기)
 This is the current working stage, focusing on refinement and practical usability.
 
@@ -107,8 +119,11 @@ Outlier filtering and quality control
 Better alignment between top-view and front-view data
 Preparing datasets for CNN / CLIP-based modeling
 
+
 👉 Objective:
 Move from experimental pipeline → usable and generalizable system
+
+
 
 🎯 Final Goal
 
