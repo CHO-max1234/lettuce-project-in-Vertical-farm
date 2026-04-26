@@ -1,0 +1,295 @@
+Codex handoff summary - lettuce time-series project
+Date range covered: 2026-04-20 to 2026-04-21
+Workspace: D:\Google Drive\내 드라이브\양상추 분류모델\practice code
+
+1. Project background
+
+The project is analyzing lettuce growth in a rotating vertical farm.
+
+The pipeline has been built in layers:
+
+- top-view and front-view image organization
+- bed detection / bed segmentation
+- ROI crop
+- warp and scale correction
+- brightness correction
+- lettuce segmentation
+- slot assignment / lettuce naming
+- front-view core extraction
+- CNN / hybrid feature extraction
+- time-series visualization across dates
+
+Until now, many attempts were made to improve unstable time-series results by modifying downstream components:
+
+- bed-seg
+- lettuce-seg
+- lettuce-slot
+- warp
+- scale
+- core extraction
+- CNN hybrid models
+- feature calculation and visualization
+
+However, the time-series did not improve meaningfully. The only partial exception was coarse core analysis with classes 0/1/2, which showed some signal because it is less sensitive than continuous area/slot/scale features.
+
+2. Important context about the image system
+
+Each shooting event produces a triplet:
+
+- cam0: top-view
+- cam1: top-view, and importantly it often shows a small white physical bed number tag on the right side
+- cam2: front-view
+
+The original assumption was:
+
+saved file name such as bed02_YYYYMMDD_HHMM_cam1 means the image belongs to physical bed02.
+
+That assumption is now strongly suspected to be false.
+
+The safer interpretation is:
+
+- cam0/cam1/cam2 with the same timestamp are probably the same shooting event or roughly the same scene.
+- But the saved bed name, such as bed02 or bed05, may not equal the actual physical bed number.
+- The actual physical bed number is more reliably read from the small white number tag visible in cam1.
+
+3. Key discovery from 2026-04-20 PDF discussion
+
+The PDF named "260420 문제점.pdf" summarized a prior GPT discussion.
+
+Core conclusion from that discussion:
+
+The issue is not simply "bed-seg mixed a neighboring bed into the ROI."
+
+The more upstream issue is:
+
+The stored bed name and the actual physical bed number visible in the image may be mismatched.
+
+Important reframing:
+
+- This is not primarily a segmentation problem.
+- This is not primarily a slot problem.
+- This is not primarily a lettuce morphology problem.
+- This is a data identity / naming / mapping problem.
+
+The PDF discussion suggested:
+
+- Do not blindly trust saved_bed names.
+- Build a monitoring / audit table.
+- Use cam1 visible white number as the most reliable anchor.
+- Treat cam0 and cam2 as followers of the same timestamp triplet.
+- Reassign a real_bed_id based on cam1.
+- Then rebuild the time-series using real_bed_id, not saved_bed.
+
+4. Key discovery from 2026-04-21 images
+
+Several images were reviewed:
+
+- 20260417_윗면0_bed02.png
+- 20260417_윗면0_bed05.png
+- 20260417_윗면1_bed05.png
+- 20260417_윗면1bed02.png
+- 20260417_정면bed02.png
+- 20260417_정면bed05.png
+- terrawave_bed05.png
+
+The important hint was:
+
+Do not focus on lettuce shape.
+Do not focus on small growth differences.
+For cam0 and cam2, only check broad scene consistency.
+For cam1, compare the right-side white physical bed number tag with the saved bed name.
+
+After narrowing the visual criterion, the evidence became much clearer.
+
+Examples seen in the screenshots:
+
+- search/render name may say bed02, but the cam1 monitoring header may say bed05
+- search/render name may say bed00, but the cam1 monitoring header may say bed02
+- a rendered bed name such as bed02 or bed05 may show actual white number tags like 22, 11, 59, 69, 50, 64, 85, 92, etc.
+- the mismatch appears not rare but frequent, possibly more than half of the observed samples
+
+Therefore:
+
+saved_bed != real physical bed id
+
+This is likely the biggest upstream cause of the time-series collapse.
+
+5. Current best diagnosis
+
+The previous time-series may have been something like:
+
+saved_bed02 time-series
+= real bed22 + real bed11 + real bed59 + real bed69 + ...
+
+If this is true, the system was not tracking one physical bed over time.
+It was connecting images from multiple different physical beds under one saved name.
+
+This explains why downstream improvements did not fix the problem:
+
+- lettuce area becomes non-monotonic
+- slot positions look unstable
+- lettuce-seg appears inconsistent
+- warp and scale corrections do not rescue the result
+- CNN/core features are evaluated on mixed identities
+- time-series curves look biologically impossible
+
+The strongest current conclusion:
+
+The largest cause, possibly 50% or more, is not model performance.
+It is that the identity key for the time-series is wrong.
+
+In one sentence:
+
+The project was trying to analyze lettuce better, but the more fundamental question "is this the same physical bed as yesterday?" was not guaranteed.
+
+6. Priority ranking of causes
+
+Current estimated priority:
+
+1. saved_bed name does not equal real physical bed id
+2. cam2/front-view observation layer and ROI ambiguity
+3. bed-seg ROI precision and neighboring bed contamination
+4. lettuce-slot and lettuce-seg errors
+5. warp, scale, CNN, and core model performance
+
+Downstream model quality still matters, but it should not be optimized further until real_bed_id mapping is fixed or at least audited.
+
+7. Correct data model going forward
+
+Do not use saved_bed as the primary identity key.
+
+Use:
+
+- triplet_id
+- timestamp
+- cam
+- saved_bed
+- cam1_visible_number
+- real_bed_id
+- qc_status
+- note
+
+Suggested row structure:
+
+date
+time
+triplet_id
+cam
+saved_bed
+rendered_bed
+cam1_visible_number
+real_bed_id
+same_as_saved
+ocr_confidence
+qc_status
+note
+
+Example:
+
+date = 20260417
+time = 083521
+triplet_id = 20260417_083521
+cam = cam1
+saved_bed = bed02
+cam1_visible_number = 59
+real_bed_id = bed59
+same_as_saved = False
+qc_status = OK
+note = saved bed mismatch; real id from cam1 white tag
+
+8. Recommended recovery strategy
+
+Step 1: Build a bed-name audit table.
+
+For each timestamp triplet:
+
+- group cam0/cam1/cam2 by timestamp or near timestamp
+- inspect cam1
+- crop the right-side white number tag
+- read the number by OCR or manual quick review
+- store it as real_bed_id
+
+Step 2: Reassign identity.
+
+- cam1 is the anchor
+- cam0 inherits real_bed_id from cam1 in the same triplet
+- cam2 inherits real_bed_id from cam1 in the same triplet, if the triplet scene is broadly consistent
+
+Step 3: Quality classification.
+
+Use:
+
+- GOOD: saved_bed and real_bed_id are consistent or confidently corrected
+- OK: mismatch exists but real_bed_id is recoverable
+- BAD: number unreadable, triplet inconsistent, or scene ambiguity too high
+
+Step 4: Rebuild time-series.
+
+Use real_bed_id rather than saved_bed.
+Only after this should bed-seg, lettuce-seg, slot, warp, scale, and CNN/core performance be evaluated again.
+
+9. OCR / semi-automatic renaming idea
+
+Fully automatic deep learning may be overkill right now.
+
+A practical approach:
+
+- crop the fixed right-side number region in cam1
+- threshold / convert to grayscale
+- use OCR for the numeric tag
+- manually correct only OCR failures
+
+Why feasible:
+
+- cam1 number tag location is relatively stable
+- number background is white
+- number font is simple
+- numbers are only 1 to 95
+- the task is not full scene understanding, only small numeric tag recognition
+
+The goal is not perfect automation.
+The goal is quickly producing usable data.
+
+Recommended mode:
+
+OCR first, then human fast correction.
+
+10. Important caution
+
+Do not throw away all previous data yet.
+
+The better framing is:
+
+Past data is not clean, but may be recoverable.
+
+The goal is:
+
+- recover maximum usable subset
+- document QC rules
+- describe in the paper that data were filtered/reindexed by cam1 visible bed number
+- improve future data collection/system naming so this does not recur
+
+11. Future operational recommendation
+
+For future datasets:
+
+- store triplet_id explicitly
+- store saved_bed separately from real_bed_id
+- OCR or read cam1 bed number at ingestion time
+- validate that saved_bed and cam1_visible_number match
+- if mismatch, flag before analysis
+- ask hardware/software vendor to confirm whether image saving name always tracks the physical rotating bed id after network interruption, pause/resume, or reoperation
+
+Important company-facing wording:
+
+Do not say only "the algorithm was wrong."
+Say:
+
+"We need to verify whether, after internet interruption / restart / pause-resume, the captured bed image and stored bed name continue to match."
+
+12. One-line final conclusion
+
+The main problem is not that all data are unusable.
+The main problem is that the project needs to define how to trust the data.
+The immediate next step is to rebuild the dataset around triplet_id plus cam1-derived real_bed_id.
+

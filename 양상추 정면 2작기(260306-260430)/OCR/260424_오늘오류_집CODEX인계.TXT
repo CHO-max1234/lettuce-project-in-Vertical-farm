@@ -1,0 +1,89 @@
+260424 오늘 오류 인계 - 집 CODEX용
+
+[상황 요약]
+- 오늘 한 일 중 가장 큰 실수는 "real_bed 규칙값"을 너무 빨리 최종 정답처럼 써서 원본 rename까지 진행한 것이다.
+- 특히 pre-window(대략 20260308~20260330)에 대해 +64 mod 95 규칙을 넓게 적용했고, human/OCR과 충돌하는 행도 자동 rename 대상에서 제대로 제외하지 못했다.
+- 그래서 결과적으로 파일명은 바뀌었지만, 실제 이미지에 보이는 번호판과 파일명이 크게 어긋나는 사례가 발생했다.
+
+[핵심 실패 포인트]
+1. human_detected, ocr_detected, rule_inferred_real_bed를 끝까지 분리하지 않고, rule 기반 real_bed_id를 최종값처럼 승격시켰다.
+2. "rule vs human/ocr 비교 검증"을 rename 전에 충분히 하지 않았다.
+3. mismatch가 큰 행을 review bucket으로 내려야 했는데, rename_ready로 통과시켰다.
+4. dry-run은 기계적 충돌 검사만 했고, 의미상 검증(visible number vs rename 결과)은 없었다.
+5. path prefix가 파일명에 붙는 버그도 있었지만, 그건 부수 문제다. 진짜 본질은 규칙 자체가 너무 공격적이었다.
+
+[대표 증거]
+- 현재 문제 사례:
+  - current file: bed68_20260308_080019_cam1_r.jpg
+  - original old_file_name: bed04_20260308_080019_cam1.jpg
+  - rule inferred real_bed_id: 68
+  - same row의 human/visible, OCR 값: 20
+- 즉 이 행은 manifest 안에서 이미 "rule=68, human=20"으로 충돌하고 있었는데도 rename이 진행되었다.
+
+[지금 결론]
+- "saved_bed -> real_bed" 전역 규칙을 그대로 계속 적용하면 안 된다.
+- 최소한 현재 상태에서는 rule_inferred_real_bed는 후보값일 뿐, final truth가 아니다.
+- 우선순위는 다음처럼 다시 잡아야 한다:
+  1) human_detected
+  2) ocr_detected
+  3) rule_inferred_bed
+  4) saved_bed
+
+[집에서 바로 할 일]
+1. 추가 rename 즉시 중단
+2. 오늘 rename된 파일 우선 원복
+   - 원복 기준은 C. rename_history_manifest.csv의 old_file_name / old path
+   - 오늘 _r 붙여서 바뀐 파일은 new -> old로 되돌리는 reverse rename 우선
+   - prefix 깨짐 복구는 별도 기계적 문제였고, semantic 원복이 먼저다
+3. 비교표 다시 만들기
+   - 컬럼 예시:
+     - old_file_name
+     - saved_bed
+     - human_detected
+     - ocr_detected
+     - rule_offset
+     - rule_inferred_bed
+     - final_bed_id_candidate
+     - human_vs_rule_match
+     - ocr_vs_rule_match
+     - human_vs_ocr_match
+     - conflict_flag
+4. mismatch율 검증
+   - human 또는 ocr와 rule_inferred_real_bed가 10% 이상 다르면 그 규칙은 자동 rename 금지
+   - date block별 / saved_bed별 / transition 구간별로 각각 mismatch율 계산
+5. rename 재시도 조건을 훨씬 보수적으로 재설계
+   - human_detected 있으면 human 최우선
+   - human 없고 ocr_detected가 안정적이면 OCR 우선
+   - 둘 다 없을 때만 rule_inferred_bed 사용
+   - 셋이 충돌하면 rename 금지 + review bucket
+
+[절대 다시 하면 안 되는 것]
+- "offset 규칙이 꽤 맞아 보인다"는 이유만으로 전체 원본 rename 바로 진행
+- human/OCR mismatch를 본문 계산만 해놓고 gating에 반영하지 않는 것
+- real_bed_id 단일 컬럼만 믿고 원본 파일명 교체
+
+[필수 검증 게이트 - 다음엔 먼저 넣을 것]
+1. pre-rename summary report 생성
+   - 전체 rename 대상 수
+   - human vs rule mismatch count / rate
+   - ocr vs rule mismatch count / rate
+   - saved_bed별 mismatch top N
+   - date별 mismatch top N
+2. stop condition
+   - mismatch > 10%면 자동 rename 중단
+   - 특정 saved_bed/date block에서 mismatch 집중되면 그 block 전부 review
+3. 샘플 시각 검증
+   - rename 예정 샘플 20~50장 눈으로 확인 후 진행
+4. fallback
+   - rename_apply_log + reverse manifest 항상 같이 생성
+   - dry-run은 기계적 충돌뿐 아니라 의미상 mismatch 요약도 같이 출력
+
+[기존 산출물에 대한 판단]
+- A. offset_rule_table.xlsx: 참고용. 규칙 후보를 보는 용도로만 사용
+- B. old_new_name_key.csv: 현재 상태로는 신뢰 불가. 규칙 기반 rename 키로 바로 쓰면 안 됨
+- C. rename_history_manifest.csv: old/new history 보존용으로는 쓸 수 있지만, semantic rename 기준표로는 재검증 필요
+
+[현재 판단]
+- 오늘 한 rename 작업은 "자동화 성공"이 아니라 "검증 없는 규칙 적용 실패"로 봐야 한다.
+- 일단 원복 후, human/OCR 중심 구조로 다시 가는 게 맞다.
+- 이번 사건의 핵심 교훈: rule은 보조 추론이고, rename은 관측값 검증이 통과한 뒤에만 해야 한다.

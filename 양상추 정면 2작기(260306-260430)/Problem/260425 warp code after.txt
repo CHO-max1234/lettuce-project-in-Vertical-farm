@@ -1,0 +1,373 @@
+from pathlib import Path
+import random
+import math
+import time
+import itertools
+import cv2
+import numpy as np
+import pandas as pd
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from tqdm.auto import tqdm
+
+# =========================================================
+# 0. 경로 설정 (여기는 사용자님의 환경에 맞춰 확인 필요)
+# =========================================================
+SAVEFILE_DIR = Path("/content/drive/Othercomputers/내 컴퓨터/새 폴더/양상추사진/양상추_테라웨이브/양상추 날짜/RGB_정면/2. ROI_BOX/2작기/0. ROI BOX 원본/이름변경 후_to 0412")
+V2_RESULT_CSV = Path("/content/drive/Othercomputers/내 컴퓨터/새 폴더/양상추사진/양상추_테라웨이브/양상추 날짜/RGB_정면/2. ROI_BOX/2작기/1. circle_anchor/이름변경 전_to 0412/_circle_anchor_test_v2/per_image_results_v2._1.csv")
+OUT_ROOT = Path("/content/drive/Othercomputers/내 컴퓨터/새 폴더/양상추사진/양상추_테라웨이브/양상추 날짜/RGB_정면/2. ROI_BOX/2작기/1. circle_anchor/이름변경 후_to 0412")
+
+# 파일 이름으로 찾을 최상위 경로 설정
+SEARCH_DIR = Path("/content/drive/Othercomputers/내 컴퓨터/새 폴더/양상추사진/양상추_테라웨이브/양상추 날짜/RGB_정면/2. ROI_BOX/2작기/0. ROI BOX 원본/이름변경 전_to 0412")
+
+RANDOM_SEED = 42
+MAX_WORKERS = 8
+IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
+
+# =========================================================
+# 1. ROI / 전처리 / 후보 검출 (전달해주신 원본 상수 100% 유지)
+# =========================================================
+LEFT_ROI_RATIO = 0.28
+UPSCALE = 1.5
+BLUR_KSIZE = 5
+CLAHE_CLIP = 2.0
+CLAHE_TILE = (8, 8)
+TOP_CUT_RATIO = 0.05
+BOTTOM_CUT_RATIO = 0.05
+
+THRESH_METHOD = "otsu_inv"
+MIN_AREA = 120
+MAX_AREA = 7000
+MIN_CIRCULARITY = 0.35
+MAX_AXIS_RATIO = 2.4
+MIN_DARKNESS_DIFF = 12
+RING_MARGIN = 1.7
+DEDUP_DIST = 18
+MIN_VISIBLE_RATE = 0.25
+
+# =========================================================
+# 2. template-driven 보정 규칙 (전달해주신 원본 상수 100% 유지)
+# =========================================================
+GOOD_NOTE_VALUE = "ㅇ"
+PARTIAL_MATCH_DIST_RATIO = 0.16
+MAX_TEMPLATE_SHIFT_RATIO = 0.08
+TEMPLATE_SHIFT_STEPS = 5
+REQUIRE_MATCH_FOR_CORRECTED = 2
+
+FONT = cv2.FONT_HERSHEY_SIMPLEX
+
+# =========================================================
+# 유틸리티 함수 (원본 로직 유지)
+# =========================================================
+def ensure_dir(path):
+    Path(path).mkdir(parents=True, exist_ok=True)
+
+def list_image_files_recursive(root_dir):
+    root_dir = Path(root_dir)
+    return sorted([p for p in root_dir.rglob("*") if p.is_file() and p.suffix.lower() in IMAGE_EXTS])
+
+def dist(p1, p2):
+    return float(np.linalg.norm(np.array(p1) - np.array(p2)))
+
+def slope(p1, p2):
+    dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+    return math.degrees(math.atan2(dy, dx))
+
+def order_points_tl_tr_br_bl(points):
+    pts = np.array(points, dtype=np.float32)
+    s = pts.sum(axis=1)
+    diff = np.diff(pts, axis=1).reshape(-1)
+    return np.array([pts[np.argmin(s)], pts[np.argmin(diff)], pts[np.argmax(s)], pts[np.argmax(diff)]], dtype=np.float32)
+
+def circularity_from_contour(cnt):
+    area, peri = cv2.contourArea(cnt), cv2.arcLength(cnt, True)
+    return float(4.0 * math.pi * area / (peri * peri)) if peri > 0 else 0.0
+
+def preprocess_gray(gray):
+    clahe = cv2.createCLAHE(clipLimit=CLAHE_CLIP, tileGridSize=CLAHE_TILE)
+    out = clahe.apply(gray)
+    if UPSCALE != 1.0:
+        h, w = out.shape[:2]
+        out = cv2.resize(out, (int(w * UPSCALE), int(h * UPSCALE)), interpolation=cv2.INTER_CUBIC)
+    return cv2.GaussianBlur(out, (BLUR_KSIZE, BLUR_KSIZE), 0)
+
+def make_binary_for_dark_holes(proc_gray):
+    if THRESH_METHOD == "otsu_inv":
+        _, bw = cv2.threshold(proc_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    else:
+        bw = cv2.adaptiveThreshold(proc_gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV, 31, 7)
+    kernel = np.ones((3, 3), np.uint8)
+    bw = cv2.morphologyEx(bw, cv2.MORPH_OPEN, kernel, iterations=1)
+    return cv2.morphologyEx(bw, cv2.MORPH_CLOSE, kernel, iterations=1)
+
+def compute_darkness_score(gray, cx, cy, radius):
+    h, w = gray.shape[:2]
+    yy, xx = np.indices((h, w))
+    rr2 = (xx - cx) ** 2 + (yy - cy) ** 2
+    inner, outer = rr2 <= (radius ** 2), (rr2 <= ((radius * RING_MARGIN) ** 2)) & (rr2 > (radius ** 2))
+    if inner.sum() < 20 or outer.sum() < 20: return None, None, 0.0
+    diff = float(gray[outer].mean()) - float(gray[inner].mean())
+    return float(gray[inner].mean()), float(gray[outer].mean()), diff
+
+def detect_dark_hole_candidates(roi_bgr):
+    gray = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2GRAY)
+    proc = preprocess_gray(gray)
+    bw = make_binary_for_dark_holes(proc)
+    contours, _ = cv2.findContours(bw, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    candidates = []
+    ph, pw = proc.shape[:2]
+    for cnt in contours:
+        area = cv2.contourArea(cnt)
+        if not (MIN_AREA < area < MAX_AREA): continue
+        circ = circularity_from_contour(cnt)
+        if circ < MIN_CIRCULARITY: continue
+        if len(cnt) < 5: continue
+        (cx, cy), (ma, mi), _ = cv2.fitEllipse(cnt)
+        major, minor = max(ma, mi), min(ma, mi)
+        if minor <= 0 or (major / minor) > MAX_AXIS_RATIO: continue
+        radius = 0.25 * (ma + mi)
+        x, y, w, h = cv2.boundingRect(cnt)
+        if (max(0, x+w) - max(0, x)) * (max(0, y+h) - max(0, y)) / (w * h) < MIN_VISIBLE_RATE: continue
+        _, _, dark_diff = compute_darkness_score(proc, cx, cy, radius)
+        if dark_diff < MIN_DARKNESS_DIFF: continue
+        if not (ph/UPSCALE * TOP_CUT_RATIO < cy/UPSCALE < ph/UPSCALE * (1 - BOTTOM_CUT_RATIO)): continue
+        candidates.append({"cx": float(cx/UPSCALE), "cy": float(cy/UPSCALE), "radius": float(radius/UPSCALE), "score_individual": float(dark_diff + 20 * circ)})
+    return sorted(candidates, key=lambda x: x["score_individual"], reverse=True)
+
+# =========================================================
+# 템플릿 학습 (가장 중요한 수정: image_path 참조 대신 SEARCH_DIR에서 파일명으로 검색)
+# =========================================================
+def load_good_template_points(csv_path: Path, roi_ratio: float):
+    if not csv_path.exists():
+        raise FileNotFoundError(f"v2 결과 CSV가 없습니다: {csv_path}")
+
+    df = pd.read_csv(csv_path)
+    if "notes" not in df.columns:
+        raise ValueError("v2 CSV에 notes 컬럼이 없습니다. good 케이스 표시가 필요합니다.")
+
+    good = df[df["notes"].astype(str) == GOOD_NOTE_VALUE].copy()
+    if len(good) == 0:
+        raise ValueError("notes=='ㅇ' 인 good 케이스가 없습니다.")
+
+    req_cols = [f"p{i}_{xy}" for i in range(1, 5) for xy in ["x", "y"]]
+    miss = [c for c in req_cols if c not in good.columns]
+    if miss:
+        raise ValueError(f"다음 컬럼이 없습니다: {miss}")
+
+    templates = []
+    for _, row in good.iterrows():
+        # 파일 이름만 추출
+        target_name = Path(row["image_path"]).name
+        
+        # SEARCH_DIR 내에서 하위 폴더 상관없이 파일명 검색
+        found_paths = list(SEARCH_DIR.rglob(target_name))
+        if not found_paths:
+            print(f"Warning: Could not find image {target_name} in {SEARCH_DIR}. Skipping.")
+            continue
+            
+        img_path = found_paths[0] # 첫 번째 발견된 파일 사용
+        
+        img = cv2.imread(str(img_path))
+        if img is None:
+            # Try reading with np.fromfile for paths with unicode characters
+            img_np = np.fromfile(str(img_path), np.uint8)
+            img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+            if img is None:
+                print(f"Warning: Could not read image {img_path}. Skipping.")
+                continue
+
+        h, w = img.shape[:2]
+        roi_w = int(w * roi_ratio)
+        pts = order_points_tl_tr_br_bl(np.array([[row[f"p{i}_x"], row[f"p{i}_y"]] for i in range(1, 5)], dtype=np.float32))
+        norm = pts.copy()
+        norm[:, 0] /= max(roi_w, 1); norm[:, 1] /= max(h, 1)
+        templates.append(norm)
+
+    if len(templates) == 0:
+        raise ValueError("good 케이스에서 template를 만들 수 없습니다.")
+
+    arr = np.stack(templates, axis=0)
+    return arr.mean(axis=0), arr.std(axis=0), len(templates)
+
+def template_to_image_points(template_norm, roi_w, img_h, dx=0.0, dy=0.0):
+    pts = np.array(template_norm, dtype=np.float32).copy()
+    pts[:, 0] *= roi_w; pts[:, 1] *= img_h
+    pts[:, 0] += dx; pts[:, 1] += dy
+    return pts
+
+def match_candidates_to_template(candidates, template_pts, roi_w, img_h):
+    if not candidates: return [], 0.0
+    diag = math.hypot(roi_w, img_h)
+    thr = PARTIAL_MATCH_DIST_RATIO * diag
+    used, matched, total_dist = set(), [], 0.0
+    for i, tp in enumerate(template_pts):
+        best_j, best_d = None, None
+        for j, c in enumerate(candidates):
+            if j in used: continue
+            d = dist(tp, (c["cx"], c["cy"]))
+            if best_d is None or d < best_d: best_d, best_j = d, j
+        if best_j is not None and best_d <= thr:
+            used.add(best_j); matched.append((i, candidates[best_j], best_d)); total_dist += best_d
+    return matched, total_dist
+
+def find_best_shifted_template(candidates, template_norm, roi_w, img_h):
+    dx_step = roi_w * MAX_TEMPLATE_SHIFT_RATIO / max(TEMPLATE_SHIFT_STEPS - 1, 1)
+    dy_step = img_h * MAX_TEMPLATE_SHIFT_RATIO / max(TEMPLATE_SHIFT_STEPS - 1, 1)
+    half = TEMPLATE_SHIFT_STEPS // 2
+    best = None
+    for ix, iy in itertools.product(range(-half, half + 1), range(-half, half + 1)):
+        dx, dy = ix * dx_step, iy * dy_step
+        t_pts = template_to_image_points(template_norm, roi_w, img_h, dx, dy)
+        matched, t_dist = match_candidates_to_template(candidates, t_pts, roi_w, img_h)
+        n = len(matched)
+        score = n * 1000 - (t_dist / max(n, 1))
+        if best is None or score > best["score"]:
+            best = {"score": score, "dx": dx, "dy": dy, "template_pts": t_pts, "matched": matched, "matched_count": n, "avg_dist": t_dist / max(n, 1)}
+    return best
+
+def corrected_points_from_template(template_pts, matched_list):
+    final_pts = template_pts.copy().astype(np.float32)
+    for idx, cand, _ in matched_list:
+        final_pts[idx, 0] = cand["cx"]
+        final_pts[idx, 1] = cand["cy"]
+    final_pts = order_points_tl_tr_br_bl(final_pts)
+    return final_pts
+
+def process_one_image(row, template_norm):
+    image_path = Path(row["image_path"])
+    out = {
+        "subfolder": row["subfolder"],
+        "image_path": str(image_path),
+        "image_name": row["image_name"],
+        "n_candidates": 0,
+        "source": "template_only",
+        "matched_count": 0,
+        "avg_match_dist": np.nan,
+        "template_dx": np.nan,
+        "template_dy": np.nan,
+        "notes": np.nan,
+        "p1_x": np.nan, "p1_y": np.nan,
+        "p2_x": np.nan, "p2_y": np.nan,
+        "p3_x": np.nan, "p3_y": np.nan,
+        "p4_x": np.nan, "p4_y": np.nan,
+    }
+
+    img = cv2.imread(str(image_path))
+    if img is None:
+        img_np = np.fromfile(str(image_path), np.uint8)
+        img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+        if img is None:
+            out["notes"] = "image_read_fail"
+            return out, None, None, None, None
+
+    h, w = img.shape[:2]
+    roi_w = int(w * LEFT_ROI_RATIO)
+    roi = img[:, :roi_w].copy()
+
+    candidates = detect_dark_hole_candidates(roi)
+    out["n_candidates"] = len(candidates)
+
+    best = find_best_shifted_template(candidates, template_norm, roi_w, h)
+    template_pts = best["template_pts"]
+    matched = best["matched"]
+    matched_count = best["matched_count"]
+    avg_dist = best["avg_dist"]
+    dx = best["dx"]
+    dy = best["dy"]
+
+    if matched_count >= REQUIRE_MATCH_FOR_CORRECTED:
+        final_pts = corrected_points_from_template(template_pts, matched)
+        source = "corrected"
+        notes = f"template_corrected_with_{matched_count}"
+    else:
+        final_pts = order_points_tl_tr_br_bl(template_pts)
+        source = "template_only"
+        notes = "template_only"
+
+    out["source"] = source
+    out["matched_count"] = matched_count
+    out["avg_match_dist"] = avg_dist
+    out["template_dx"] = dx
+    out["template_dy"] = dy
+    out["notes"] = notes
+
+    p1, p2, p3, p4 = final_pts
+
+    top_w = dist(p1, p2)
+    bottom_w = dist(p4, p3)
+    left_h = dist(p1, p4)
+    right_h = dist(p2, p3)
+
+    diag1 = dist(p1, p3)
+    diag2 = dist(p2, p4)
+
+    top_slope = slope(p1, p2)
+    bottom_slope = slope(p4, p3)
+    left_slope = slope(p1, p4)
+    right_slope = slope(p2, p3)
+
+    width_ratio = top_w / (bottom_w + 1e-6)
+    height_ratio = left_h / (right_h + 1e-6)
+    diag_ratio = diag1 / (diag2 + 1e-6)
+
+    quad_area = 0.5 * abs(
+        p1[0]*p2[1] + p2[0]*p3[1] + p3[0]*p4[1] + p4[0]*p1[1]
+        - p2[0]*p1[1] - p3[0]*p2[1] - p4[0]*p3[1] - p1[0]*p4[1]
+    )
+
+    cx = np.mean([p1[0], p2[0], p3[0], p4[0]])
+    cy = np.mean([p1[1], p2[1], p3[1], p4[1]])
+
+    out.update({
+        "quad_width_top": top_w,
+        "quad_width_bottom": bottom_w,
+        "quad_height_left": left_h,
+        "quad_height_right": right_h,
+        "quad_diag_1": diag1,
+        "quad_diag_2": diag2,
+        "top_slope_deg": top_slope,
+        "bottom_slope_deg": bottom_slope,
+        "left_slope_deg": left_slope,
+        "right_slope_deg": right_slope,
+        "width_ratio": width_ratio,
+        "height_ratio": height_ratio,
+        "diag_ratio": diag_ratio,
+        "quad_area": quad_area,
+        "centroid_x": cx,
+        "centroid_y": cy,
+    })
+
+    for i in range(4):
+        out[f"p{i+1}_x"] = float(final_pts[i][0])
+        out[f"p{i+1}_y"] = float(final_pts[i][1])
+
+    return out, img, roi, candidates, final_pts
+    
+
+# =========================================================
+# 메인 실행부 (전수 조사 모드)
+# =========================================================
+def main():
+    ensure_dir(OUT_ROOT)
+    print("[1] 엑셀의 image_path를 참조하여 선생님 이미지들로부터 형태 학습 중...")
+    template_norm, _, n_good = load_good_template_points(V2_RESULT_CSV, LEFT_ROI_RATIO)
+
+    print(f"[2] {SAVEFILE_DIR} 에서 학생 이미지(전수 조사 대상) 수집 중...")
+    image_paths = list_image_files_recursive(SAVEFILE_DIR)
+    # 결과 폴더 내부 파일은 제외하는 필터링 유지
+    image_paths = [p for p in image_paths if OUT_ROOT.name not in str(p)]
+
+    results = []
+    # ThreadPool을 사용하여 대용량(2,100장) 이미지 병렬 처리
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
+        # process_one_image는 원본 코드의 로직을 그대로 따름
+        futures = [ex.submit(process_one_image, {"image_path": str(p), "image_name": p.name, "subfolder": str(p.parent)}, template_norm) for p in image_paths]
+        for fut in tqdm(as_completed(futures), total=len(futures), desc="Warp 4점 분석 중"):
+            out, _, _, _, _ = fut.result()
+            results.append(out)
+
+    # 결과 저장
+    pd.DataFrame(results).to_csv(OUT_ROOT / "per_image_results_v3.csv", index=False, encoding="utf-8-sig")
+    print(f"\n분석 완료! 결과 확인: {OUT_ROOT}")
+
+if __name__ == "__main__":
+    main()
