@@ -1,0 +1,174 @@
+{
+  "contract": {
+    "status": "FROZEN_BEFORE_C_STEP_TRAINING",
+    "frozen_at": "2026-09-20T15:36:01",
+    "variants": {
+      "344columns": {
+        "wide_columns": 344,
+        "candidate_features": 223,
+        "main_features": 221,
+        "stacking_features": 222,
+        "excluded_train_only": [
+          "history_current_gap_days",
+          "history_has_current_image"
+        ],
+        "groups": {
+          "cnn_current_or_history": 22,
+          "current_embedding_128": 128,
+          "current_image_or_cnn": 29,
+          "embedding_history": 6,
+          "environment": 16,
+          "image_history": 9,
+          "tracking_time": 11
+        },
+        "split_rows": {
+          "train": 801,
+          "valid": 219,
+          "test": 268
+        }
+      },
+      "454columns": {
+        "wide_columns": 454,
+        "candidate_features": 313,
+        "main_features": 310,
+        "stacking_features": 311,
+        "excluded_train_only": [
+          "history_current_gap_days",
+          "history_has_current_image",
+          "cnn_stage_min_history"
+        ],
+        "groups": {
+          "cnn_current_or_history": 26,
+          "current_embedding_128": 128,
+          "current_image_or_cnn": 29,
+          "embedding_history": 11,
+          "environment": 16,
+          "image_history": 89,
+          "tracking_time": 11
+        },
+        "split_rows": {
+          "train": 801,
+          "valid": 219,
+          "test": 268
+        }
+      }
+    },
+    "split_counts": {
+      "train": 801,
+      "valid": 219,
+      "test": 268
+    },
+    "no_new_split": true,
+    "model_family": "CatBoostRegressor",
+    "target": "fresh_weight_g",
+    "base_prediction": "pred_weight_cnn",
+    "residual_target": "fresh_weight_g - pred_weight_cnn",
+    "residual_reconstruction": "base_prediction + residual_model_output",
+    "recipes": [
+      "cnn_only_reference",
+      "direct",
+      "direct_stacking",
+      "residual",
+      "blend50_direct_stacking_residual"
+    ],
+    "blend": "0.5 * seed_mean(direct_stacking) + 0.5 * seed_mean(reconstructed_residual); same variant only",
+    "parameters": {
+      "loss_function": "RMSE",
+      "eval_metric": "MAE",
+      "iterations": 4000,
+      "learning_rate": 0.02,
+      "depth": 6,
+      "l2_leaf_reg": 5.0,
+      "od_type": "Iter",
+      "od_wait": 250,
+      "nan_mode": "Min",
+      "task_type": "CPU",
+      "thread_count": -1,
+      "allow_writing_files": false,
+      "use_best_model": true
+    },
+    "seeds": [
+      260725,
+      260726,
+      260727
+    ],
+    "seed_policy": "mean all three seeds; never select the best seed",
+    "model_budget": {
+      "base_ensembles": 6,
+      "base_fits": 18,
+      "fixed_blends": 2,
+      "hyperparameter_search": false
+    },
+    "primary_selection": "unweighted validation MAE in grams; no test-based decisions",
+    "secondary_metrics": [
+      "RMSE_g",
+      "R2",
+      "bias_g",
+      "WAPE_percent"
+    ],
+    "selection_order": [
+      "For each variant, select its lowest-validation-MAE recipe (direct, stacking, residual, fixed blend).",
+      "If best 344 MAE <= best 454 MAE + 0.5 g, select 344; otherwise select 454.",
+      "Within one variant, exact MAE ties: lower validation RMSE, fewer fitted components, then recipe name.",
+      "If the selected C recipe does not beat CNN-only validation MAE, retain CNN-only as the recommendation; report all planned comparisons."
+    ],
+    "parsimony_tolerance_g": 0.5,
+    "parsimony_note": "User-approved practical selection tolerance, not a statistical equivalence claim.",
+    "weights": {
+      "period_column": "survey_date (training sampler metadata only, excluded from X)",
+      "boundary": "2026-05-04",
+      "train_rows": {
+        "pre0504": 78,
+        "0504": 723
+      },
+      "normalized_mean": 1,
+      "total_weight_shares": {
+        "0504": 0.6,
+        "pre0504": 0.39999999999999997
+      },
+      "rule": "legacy C-step 40:60 period weighting, recomputed on current train only",
+      "no_weight_bin_boost": true,
+      "validation_test_unweighted": true,
+      "upstream_A_sampler_columns": "all missing; not used or filled from validation/test"
+    },
+    "missingness": "Preserve NaN; no interpolation, zero fill, global median, scaling or PCA refit. CatBoost nan_mode=Min.",
+    "constant_policy": "Drop only train-all-missing or train nunique(dropna=False)<=1. Preserve original wide/schema.",
+    "residual_base_note": "pred_weight_cnn is stored separately and appended only for direct_stacking. Existing permitted cnn_pred_weight_current/history features remain per frozen schema.",
+    "row_policy": "Preserve all 1288 rows and IDs; no performance-based filtering, deduplication or rematching of learning rows.",
+    "supervised_feature_lineage": "train owner OOF; validation/test held-out-bed fold ensembles; fixed label-free train PCA reused",
+    "validation_role": "Development set already used in A-step epoch selection; not a new independent holdout.",
+    "test_policy": "No C-step test prediction/metric inspection before validation selection and planned ablations are frozen. Exporting unchanged test targets is not evaluation.",
+    "test_prior_exposure": "A-step test results have already been seen; call it fixed held-out-bed evaluation, not a pristine external blind test.",
+    "fold_note": "upstream_oof_fold preserves A-step prediction provenance; it does not make a naive C-step inner CV nested/independent. Do not claim nested OOF validation.",
+    "ablation": {
+      "stage": "After validation full-recipe selection; validation only before test release",
+      "group_source": "ablation_groups_<variant>.json",
+      "method": "drop one group at a time, same parameters/seeds/rows/weights",
+      "selection_use": "diagnostic only for this frozen run; no new adaptive feature search",
+      "blend_rule": "If selected recipe is blend, remove each group from both components and preserve fixed 50:50 weights"
+    },
+    "historical_comparison": "Historical R2 about 0.855 used a different cohort/split. Context only; primary gain is against current A-step on the identical rows.",
+    "limitations": [
+      "Upstream camera choice used full-track image-quality statistics and remains unchanged by user decision.",
+      "Retrospective held-out-bed design, not future-date or independent-crop validation.",
+      "Environment uses prior completed days; GDD starts at sensor coverage, not transplanting.",
+      "DAT and plot interpolation are display-only and excluded from learning inputs."
+    ],
+    "source_sha256": {
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\01. 기준자료\\current_manifest.csv": "1dce205d2ff3a82b0dc7f941c712fdf1de0da08faf70f9ac8c0b79da06138fbb",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\01. 기준자료\\input_contract.json": "668f3621cf53dffa9275568e9929f2747a3cae18e6d3b5ce382f6f942f24aa29",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\2. A-step embedding based regression\\03_A_step_20260918\\data\\bed_split.csv": "988cf0c90d03d6b2768cf6392840656c11d9263516c494b2be2dcf37dadff7c9",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\05. 최종병합 및 검증\\C_step_1st_wide_344columns.csv": "340331280e519c4fcffb8f7d92aaee8a2553bc088a81bb2368233574de3cfd9b",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\05. 최종병합 및 검증\\C_step_1st_schema_344columns.csv": "b35e185dea68ab291ede15b3c82ab7e74819fab57d9618b69e96bfbc1c52de16",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\05. 최종병합 및 검증\\C_step_2nd_wide_1288x454.csv": "167433cce333dcea1cc8b1959502b38cc60c2f7548156b0cf533cf7efd30f073",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\05. 최종병합 및 검증\\C_step_2nd_schema.csv": "79f51f1c26c42b20c978f583c652974a77a3425e98f25373b664bfa62ec0b236",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\05. 최종병합 및 검증\\DATA_COMPLETION_344columns.json": "b709b8c0c448303f9dfccdf3889271edbea30f1eada4130808505784c538b401",
+      "D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브\\전처리,모델 성능개선\\260915_0925_5. 분류와 회귀, 수확판단\\3. C-step direct&residual regression\\1. 데이터 생성 및 병합\\05. 최종병합 및 검증\\DATA_COMPLETION.json": "8c3959b8bc77c070e9da055633db93868ebcdd1f902cce4840cf8b206121591b"
+    },
+    "model_training_executed": false
+  },
+  "contract_sha256": "9f2fdff62c7aa55d5044f436c041938fc02ded1a4b562702d2d274ec03d770f7",
+  "code_sha256": "9597629c7b0f59ae139e771f7dd7ff0713babcca455c20ffdb95e1b7f2f0f0cf",
+  "catboost_version": "1.2.10",
+  "started_at": "2026-09-20T15:46:50.181444"
+}

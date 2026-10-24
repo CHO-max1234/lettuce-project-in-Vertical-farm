@@ -1,0 +1,7 @@
+{
+  "status": "COMPLETE",
+  "best_model": "bed_front.pt",
+  "best_sha256": "648f6ce3fb520ef603a427f578aaa60c58ebc96e0226122a51c6d53b1b0e5109",
+  "source_training_completion_sha256": "70018e03b9946b66fa66f05ec6eccb5b984098917b2b675b95de7f6226eea9ac",
+  "training_reproduced": false
+}

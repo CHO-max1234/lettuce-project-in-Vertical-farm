@@ -1,0 +1,17 @@
+# Runtime packages; common model artifacts are bundled in the main cycle.
+numpy==2.2.6
+pandas==2.3.3
+torch==2.11.0
+torchvision==0.26.0
+opencv-python==4.11.0.86
+openpyxl==3.1.5
+Pillow==12.2.0
+tqdm==4.68.3
+catboost==1.2.10
+scipy==1.15.3
+ultralytics==8.4.33
+easyocr==1.7.2
+
+psutil==7.0.0
+scikit-learn==1.7.2
+matplotlib==3.10.9

@@ -1,0 +1,6 @@
+{
+  "released_at": "2026-09-20T16:02:09.918299",
+  "selection_sha256": "8eba763cb5e35c9f1d7285ce973304a34aa7087b334574ae2128ed2e392d7220",
+  "ablation_sha256": "0af1000ee438a31db1ae2c003cf62185004d409f7f00b8ea62c157a1d641197c",
+  "reason": "Full recipe selection and seven planned validation ablations finished; no adaptive reselection."
+}

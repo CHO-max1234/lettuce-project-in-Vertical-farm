@@ -1,0 +1,75 @@
+"""Paths and frozen-model settings for external research cycle 4."""
+from pathlib import Path
+import os
+import sys
+PROJECT_ROOT = Path(__file__).resolve().parent
+MAIN_ROOT = Path(os.environ.get('LETTUCE_MAIN_ROOT', PROJECT_ROOT.parent / 'main_cycle(260306_260504)')).resolve()
+THIRD_ROOT = Path(os.environ.get('LETTUCE_THIRD_ROOT', PROJECT_ROOT.parent / 'validation_cycle2(260508_260620)')).resolve()
+DATA_ROOT = Path(os.environ.get('LETTUCE_S4_DATA_ROOT', PROJECT_ROOT / 'data')).resolve()
+OUTPUT_ROOT = Path(os.environ.get('LETTUCE_S4_OUTPUT_ROOT', PROJECT_ROOT / 'runs' / 'cycle4')).resolve()
+SOURCE_ROOT = Path(os.environ.get('LETTUCE_S4_SOURCE_ROOT', DATA_ROOT / 'preprocessed')).resolve()
+PREPROCESS_OUTPUT = Path(os.environ.get('LETTUCE_S4_PREPROCESS_ROOT', OUTPUT_ROOT / 'preprocessing')).resolve()
+MATCHING = SOURCE_ROOT / '6. 시각화와 QC' / 'matching_crops_115'
+TARGET_FILE = Path(os.environ.get('LETTUCE_S4_TARGET_FILE', MATCHING / 'Feature 최종_생육매칭__89rows.xlsx')).resolve()
+SOURCE115 = Path(os.environ.get('LETTUCE_S4_LABEL_FILE', MATCHING / 'Feature 최종_생육매칭_115rows.xlsx')).resolve()
+GROWTH_FILE = Path(os.environ.get('LETTUCE_S4_SURVEY_FILE', DATA_ROOT / 'growth.xlsx')).resolve()
+ENVIRONMENT_FILE = Path(os.environ.get('LETTUCE_S4_ENVIRONMENT_FILE', DATA_ROOT / 'environment.xlsx')).resolve()
+RAW_TOP_ROOT = Path(os.environ.get('LETTUCE_S4_RAW_TOP', DATA_ROOT / 'raw' / 'top')).resolve()
+RAW_FRONT_ROOT = Path(os.environ.get('LETTUCE_S4_RAW_FRONT', DATA_ROOT / 'raw' / 'front')).resolve()
+ARTIFACT_ROOT = MAIN_ROOT / 'artifacts'
+LOCAL_ARTIFACT_ROOT = PROJECT_ROOT / 'artifacts'
+STAGE_MODEL = ARTIFACT_ROOT / 'cnn' / 'stage.pt'
+A_MODEL = ARTIFACT_ROOT / 'a_step'
+C_MODELS = ARTIFACT_ROOT / 'c_step'
+PCA_FILE = ARTIFACT_ROOT / 'pca128_train_only.npz'
+BACKBONE_FILE = ARTIFACT_ROOT / 'efficientnet_b0.pth'
+BED_TOP_MODEL = ARTIFACT_ROOT / 'segmentation' / 'bed_top.pt'
+BED_FRONT_MODEL = LOCAL_ARTIFACT_ROOT / 'bed_front.pt'
+PLANT_MODEL = ARTIFACT_ROOT / 'segmentation' / 'plant.pt'
+OCR_MODEL_DIR = ARTIFACT_ROOT / 'ocr'
+HARVEST_RULE = ARTIFACT_ROOT / 'harvest_rule.json'
+CROP_ROOT = SOURCE_ROOT / '5. bbox to crop, feature' / 'crops'
+CROP_DB = CROP_ROOT.parent / '_whole_run' / 'state.sqlite3'
+OCR_POINTER = SOURCE_ROOT / '2. OCR 기록' / 'OCR_RELAXED_CURRENT.json'
+LAYOUT_BASE_DB = SOURCE_ROOT / '4. 자리배치와 bbox' / '자리배치_ver2' / 'state.sqlite3'
+CALIBRATION_ROOT = SOURCE_ROOT / '6. 시각화와 QC' / 'Figures_v2.2_159행' / '_실행기록'
+SOURCE_PREPROCESS_ROOT = SOURCE_ROOT
+MAIN_PIPELINE = MAIN_ROOT / 'pipeline'
+MAIN_PREPROCESS = MAIN_ROOT / 'preprocessing'
+PREPROCESSED_INPUT = SOURCE_ROOT
+MODEL_OUTPUT = OUTPUT_ROOT / 'models'
+ENVIRONMENT_ROOT = MODEL_OUTPUT / '00_environment'
+INPUT_ROOT = MODEL_OUTPUT / '01_inputs'
+CNN_ROOT = MODEL_OUTPUT / '02_CNN'
+A_ROOT = MODEL_OUTPUT / '03_A-step'
+A_EVALUATION_ROOT = MODEL_OUTPUT / '04_A_evaluation'
+C_ROOT = MODEL_OUTPUT / '05_C-step'
+ENVIRONMENT_RUN = Path(os.environ['LETTUCE_S4_ENV_RUN']) if os.environ.get('LETTUCE_S4_ENV_RUN') else None
+A_RUN = Path(os.environ['LETTUCE_S4_A_RUN']) if os.environ.get('LETTUCE_S4_A_RUN') else None
+PREPARED_RUN = Path(os.environ['LETTUCE_S4_PREPARED_RUN']) if os.environ.get('LETTUCE_S4_PREPARED_RUN') else None
+A_EVALUATION_RUN = Path(os.environ['LETTUCE_S4_A_EVAL_RUN']) if os.environ.get('LETTUCE_S4_A_EVAL_RUN') else None
+PYTHON = Path(sys.executable)
+DEVICE = os.environ.get('LETTUCE_DEVICE', 'auto')
+BATCH_SIZE = 16
+WORKERS = 4
+SEASON_ID = '4작기'
+SEASON_START = '2026-07-23'
+SEASON_END = '2026-08-25'
+ENVIRONMENT_SCHEMA = 'legacy16_partial_external'
+C_MODEL_TAG = '454columns_blend50'
+LEGACY_SOURCE_ROOT = 'E:\\newfolder_양상추\\4작기 실증 적용'
+LEGACY_RAW_ROOT = 'D:\\Googledrive\\newfolder\\양상추사진\\양상추_테라웨이브'
+
+# Aliases read by shared preprocessing calculations; source identifiers stay intact.
+BBOX_OUTPUT = PREPROCESS_OUTPUT / '4. 자리배치와 bbox'
+BRIGHT_OUTPUT = PREPROCESS_OUTPUT / '3. 밝기보정과 Scale'
+OCR_OUTPUT = PREPROCESS_OUTPUT / '2. OCR 기록'
+BED_OUTPUT = PREPROCESS_OUTPUT / '1. ROI_BOX'
+CROP_FOLDER = '5. bbox to crop, feature'
+CROP_OUTPUT = PREPROCESS_OUTPUT / CROP_FOLDER
+PREPROCESS_CODE = THIRD_ROOT / 'preprocessing'
+RAW_IMAGE_ROOT = RAW_TOP_ROOT
+FEATURE_FILE = SOURCE_ROOT / 'features.xlsx'
+LEGACY_STORAGE_ROOT = r'D:\양상추연구_local\newfolder'
+RELOCATED_STORAGE_ROOT = r'E:\newfolder_양상추'
+PREPROCESS_PROFILE = None

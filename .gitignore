@@ -1,0 +1,21 @@
+# Local project records and review copy; retain them locally.
+/readme_내부용.txt
+/진행사항_내부용.txt
+/figures/FigS3_다시확인.png
+
+# Python environments and caches.
+__pycache__/
+*.py[cod]
+.venv*/
+.ipynb_checkpoints/
+
+# User-supplied full datasets and generated runs.
+/main_cycle(260306_260504)/data/
+/main_cycle(260306_260504)/runs/
+/validation_cycle2(260508_260620)/data/
+/validation_cycle2(260508_260620)/runs/
+/validation_cycle3(260723_260826)/data/
+/validation_cycle3(260723_260826)/runs/
+/runs/
+outputs/
+/figures/reproduced/

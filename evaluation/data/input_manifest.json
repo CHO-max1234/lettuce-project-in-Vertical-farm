@@ -1,0 +1,74 @@
+{
+  "tables": [
+    {
+      "file": "Table_04_predictions.csv",
+      "rows": 668,
+      "columns": [
+        "sample_id",
+        "human_stage",
+        "bed",
+        "human_p0",
+        "hard_p0",
+        "soft_p0",
+        "human_p1",
+        "hard_p1",
+        "soft_p1",
+        "human_p2",
+        "hard_p2",
+        "soft_p2",
+        "human_p3",
+        "hard_p3",
+        "soft_p3",
+        "human_p4",
+        "hard_p4",
+        "soft_p4"
+      ],
+      "sha256": "68d66d4d3e21ad1376118aed404ba147004dad8675b873899d0da3be8a9f3c80"
+    },
+    {
+      "file": "Table_05_predictions.csv",
+      "rows": 268,
+      "columns": [
+        "sample_id",
+        "observed_weight_g",
+        "pred_cnn_only",
+        "pred_direct_catboost",
+        "pred_residual_catboost"
+      ],
+      "sha256": "e37e76d84af5ef94154f26e131894167ff21e5b7c1945ca9e60bd7a9496b0557"
+    },
+    {
+      "file": "Table_06_predictions.csv",
+      "rows": 268,
+      "columns": [
+        "sample_id",
+        "observed_weight_g",
+        "baseline_cnn",
+        "direct",
+        "direct_stacking",
+        "residual",
+        "blend50"
+      ],
+      "sha256": "321bbd3dc25b54f291400881aecd3f1b905cd75323a1363cefc3b51ed8e03678"
+    },
+    {
+      "file": "Table_07_predictions.csv",
+      "rows": 268,
+      "columns": [
+        "sample_id",
+        "actual_stage",
+        "observed_weight_g",
+        "cnn_pred_stage",
+        "cnn_p4",
+        "predicted_weight_g"
+      ],
+      "sha256": "6c9c66d0332a56d59301526613f775947c101c95902e7c9acf04a463b330bc7e"
+    }
+  ],
+  "scope": "Held-out saved predictions for metric recalculation; no images, checkpoints, or training reproduction",
+  "table7_threshold": {
+    "p4": 0.3,
+    "weight_g": 120,
+    "selected_on": "validation"
+  }
+}

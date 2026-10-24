@@ -1,0 +1,4 @@
+# Shared model-workflow dependencies. Figure plotting uses figures/requirements.txt separately.
+-r main_cycle(260306_260504)/requirements.txt
+-r validation_cycle2(260508_260620)/requirements.txt
+-r validation_cycle3(260723_260826)/requirements.txt

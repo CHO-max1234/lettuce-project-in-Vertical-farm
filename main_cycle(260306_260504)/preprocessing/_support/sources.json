@@ -1,0 +1,30 @@
+[
+  {
+    "local": "_support/cam01/cam0_geometry.py",
+    "sha256": "255e55b09b9449c24a1c4b5258833d786b962063433f546fd3d74afb0f06be18"
+  },
+  {
+    "local": "_support/cam01/cam1_geometry.py",
+    "sha256": "29fcb9a6d9965803c19517c9c62e92a4b463be2bb1cbb3e98607e4c5a06ec169"
+  },
+  {
+    "local": "_support/cam01/plant_segmentation.py",
+    "sha256": "abc6b12b0ed4093273cbaa69bc4673bc384b51c5a4bb1d08adf6861711f0a3a0"
+  },
+  {
+    "local": "_support/cam01/slot_geometry.py",
+    "sha256": "97450e81ccb4a87a9d50b1256c4d36daa1790c5e8d76ca25ec2bfd9754bd3578"
+  },
+  {
+    "local": "_support/cam2/bed_registration.py",
+    "sha256": "e3903815a88568deee4b08ddfa6a45c3c5637f8e4d97d91cd0cfa77dac538509"
+  },
+  {
+    "local": "_support/cam2/rail_geometry.py",
+    "sha256": "2557e7954d71d184ff4582298ccb0b5fc8364be260346244a90fc53f227ee4a5"
+  },
+  {
+    "local": "_support/cam2/slot_geometry.py",
+    "sha256": "63c95690d558fa368223ded5100e5768aaf50472eead0ebb6ef0a168096d2774"
+  }
+]

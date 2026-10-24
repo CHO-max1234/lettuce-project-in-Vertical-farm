@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-24",
+  "table": "08",
+  "scope": "Fixed saved operational cases and original eligibility-preserving daily area histories; no new inference.",
+  "files": [
+    {
+      "relative": "code/Table_08.py",
+      "sha256": "4c44d67fdd05afd779474fa1583147cf9dabfa7f24a25064b8526536abc9869a",
+      "bytes": 7119
+    },
+    {
+      "relative": "data/Table_08_cases.csv",
+      "sha256": "d882630c7b3038929c5cdcff2ce7af73883bca71ace60919aa1cfe000b61b49f",
+      "bytes": 1274
+    },
+    {
+      "relative": "data/Table_08_daily_history.csv",
+      "sha256": "7dde7358f905a68a2a20374c57b4bf51fd74fbf9740cc408bd2449624978e6f7",
+      "bytes": 34673
+    }
+  ],
+  "shared_helper": "code/table_review.py",
+  "case_rows": 4,
+  "daily_rows": 176,
+  "limitations": [
+    "Case2 saved argmax is3 but manuscript reports4.",
+    "Projected-area QC is supplementary; not biological growth diagnosis.",
+    "Original table image retained; photo panel is not reconstructed."
+  ]
+}

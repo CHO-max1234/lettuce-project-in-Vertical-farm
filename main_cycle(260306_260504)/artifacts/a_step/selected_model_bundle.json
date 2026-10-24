@@ -1,0 +1,147 @@
+{
+  "selected_model": "cnn_only",
+  "entrypoint": "D:\\Googledrive\\양상추 분류모델\\practice code\\양상추 수확판별 전처리와 모델개선_V2_2608_10\\260915_0920_4. 분류, 회귀, 수확판단\\2. A-step embedding based regression\\260918_14_predict_A_step.py",
+  "core_numeric_features": [
+    "blur_score",
+    "roi_area_px",
+    "area_cm2",
+    "perimeter_px",
+    "circularity",
+    "solidity",
+    "curvature",
+    "aspect_ratio",
+    "bottom_flatness",
+    "upper_area_px",
+    "lower_area_px",
+    "upper_lower_area_ratio",
+    "upper_circularity",
+    "upper_edge_density",
+    "radial_min",
+    "radial_max_min_ratio",
+    "brightness_mean",
+    "dark_ratio",
+    "grad_std",
+    "inner_ratio_30",
+    "inner_ratio_50",
+    "ridge_circularity",
+    "ridge_std_r",
+    "ridge_mean_r",
+    "angular_cv"
+  ],
+  "optional_front_features": [],
+  "front_missing_indicator": false,
+  "image_sizes": [
+    384,
+    256
+  ],
+  "aggregation": "mean of five paired pipeline predictions, then clip at zero",
+  "supervised_embeddings_are_model_specific": true,
+  "training_rows_require_crossfit_predictions": true,
+  "folds": [
+    {
+      "fold": 1,
+      "files": [
+        {
+          "path": "fold_1/stage.pt",
+          "sha256": "e1439773b515bddb9ca90f94bf278101653534fc5e76254e9338ff8d0d56f2df"
+        },
+        {
+          "path": "fold_1/weight.pt",
+          "sha256": "e18244f919051133b5556c841bb2dc8b0722eb1c9298628e01ab975dd4585f0c"
+        },
+        {
+          "path": "fold_1/numeric_preprocessor.json",
+          "sha256": "bcffaf2fd330c4ae9b9cc2c2731c89b6625be82437628bffb3249692ccaa4178"
+        },
+        {
+          "path": "fold_1/numeric_feature_names.json",
+          "sha256": "22f8a95482143ccc4eebb1e38fd9e6b4d75f7e96afc5ca6580026a968da9e8e8"
+        }
+      ]
+    },
+    {
+      "fold": 2,
+      "files": [
+        {
+          "path": "fold_2/stage.pt",
+          "sha256": "e068ce60b5b93e86310a02cc0584b0c0e4b33b1d1515b7e89f2390bc6f2b1a11"
+        },
+        {
+          "path": "fold_2/weight.pt",
+          "sha256": "7469c482c349b7013f7931d08afca873125fa987029cdf188c1a503648186fac"
+        },
+        {
+          "path": "fold_2/numeric_preprocessor.json",
+          "sha256": "56fabee068867dda4025fdb8c616702a24e372d3997a181d129a3cb183d1bc56"
+        },
+        {
+          "path": "fold_2/numeric_feature_names.json",
+          "sha256": "22f8a95482143ccc4eebb1e38fd9e6b4d75f7e96afc5ca6580026a968da9e8e8"
+        }
+      ]
+    },
+    {
+      "fold": 3,
+      "files": [
+        {
+          "path": "fold_3/stage.pt",
+          "sha256": "45adbb4afa7cbedddae06b45a52738adbffa3d399d76330bef6c2ea8a4983915"
+        },
+        {
+          "path": "fold_3/weight.pt",
+          "sha256": "479cd17fae668f8463384680caba3b0d3bf136068e290d5960fe563df1d91305"
+        },
+        {
+          "path": "fold_3/numeric_preprocessor.json",
+          "sha256": "59eb010760e43b015fc1e03cd22e9c7a3661dc942e75e47f49cd3a7d9e152081"
+        },
+        {
+          "path": "fold_3/numeric_feature_names.json",
+          "sha256": "22f8a95482143ccc4eebb1e38fd9e6b4d75f7e96afc5ca6580026a968da9e8e8"
+        }
+      ]
+    },
+    {
+      "fold": 4,
+      "files": [
+        {
+          "path": "fold_4/stage.pt",
+          "sha256": "c8eef9017e613374aa9e9cd1e3923adfa559ef17c481037bfc0dffb6f20609e7"
+        },
+        {
+          "path": "fold_4/weight.pt",
+          "sha256": "e10936f8a728afbe3996470b0a1f90d8bab7c6c5bd839ab4e0f7fb908a710a8f"
+        },
+        {
+          "path": "fold_4/numeric_preprocessor.json",
+          "sha256": "d72556a7a9a78fc55a4c627b5c14ec8bc6048a47a7c6f0618e160d72bcb8b460"
+        },
+        {
+          "path": "fold_4/numeric_feature_names.json",
+          "sha256": "22f8a95482143ccc4eebb1e38fd9e6b4d75f7e96afc5ca6580026a968da9e8e8"
+        }
+      ]
+    },
+    {
+      "fold": 5,
+      "files": [
+        {
+          "path": "fold_5/stage.pt",
+          "sha256": "9ccc7629564d528255703364bc402d4e884866c312d7c0de079e1b35db06f2f9"
+        },
+        {
+          "path": "fold_5/weight.pt",
+          "sha256": "318b993d15afad36c7ade2591fb42e35afc1faee45857159114ea85d2e12bac5"
+        },
+        {
+          "path": "fold_5/numeric_preprocessor.json",
+          "sha256": "975e0d1d0f0a6f4e423845cc5bba670c21f646044b4da290fb248376f46fbedd"
+        },
+        {
+          "path": "fold_5/numeric_feature_names.json",
+          "sha256": "22f8a95482143ccc4eebb1e38fd9e6b4d75f7e96afc5ca6580026a968da9e8e8"
+        }
+      ]
+    }
+  ]
+}

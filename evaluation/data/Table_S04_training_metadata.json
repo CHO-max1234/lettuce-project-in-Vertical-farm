@@ -1,0 +1,137 @@
+{
+  "bed_top": {
+    "config": {
+      "imgsz": 1024,
+      "epochs": 120,
+      "patience": 25,
+      "batch": 4,
+      "pretrained": true,
+      "optimizer": "auto",
+      "lr0": 0.01,
+      "lrf": 0.01,
+      "momentum": 0.937,
+      "weight_decay": 0.0005,
+      "cos_lr": true,
+      "warmup_epochs": 3.0,
+      "amp": true,
+      "deterministic": true,
+      "seed": 260823,
+      "overlap_mask": true,
+      "mask_ratio": 4,
+      "degrees": 1.5,
+      "translate": 0.02,
+      "scale": 0.1
+    },
+    "architecture": "yolo11s-seg.yaml",
+    "class_names": {
+      "0": "bed_roi"
+    },
+    "logged_epochs": 23,
+    "retained_checkpoint": {
+      "epoch": 22,
+      "ultralytics_version": "8.4.33",
+      "train_metrics": {
+        "precision": 0.99521,
+        "recall": 0.99005,
+        "map50": 0.99448,
+        "map50_95": 0.86569
+      }
+    },
+    "data_yaml_exists_at_recorded_path": false,
+    "source_hashes": {
+      "args_yaml": "7199533f8be9295dbe16300eb4f4927ba8dd10b61ce87f0feb62d3d39fe1ac15",
+      "results_csv": "8758b93fe70952bbbf4dbec38ec419fc061fa8292dd25bc5f6130fcd20893a09",
+      "retained_checkpoint": "38e45d96edc6727c1de2c9c7c20079c7b7355403bbb8b602a7e43372cf71b66f"
+    }
+  },
+  "bed_front": {
+    "config": {
+      "imgsz": 1024,
+      "epochs": 120,
+      "patience": 25,
+      "batch": 4,
+      "pretrained": true,
+      "optimizer": "auto",
+      "lr0": 0.01,
+      "lrf": 0.01,
+      "momentum": 0.937,
+      "weight_decay": 0.0005,
+      "cos_lr": true,
+      "warmup_epochs": 3.0,
+      "amp": true,
+      "deterministic": true,
+      "seed": 260825,
+      "overlap_mask": true,
+      "mask_ratio": 4,
+      "degrees": 1.0,
+      "translate": 0.02,
+      "scale": 0.1
+    },
+    "architecture": "yolo11s-seg.yaml",
+    "class_names": {
+      "0": "bed_roi"
+    },
+    "logged_epochs": 112,
+    "retained_checkpoint": {
+      "epoch": -1,
+      "ultralytics_version": "8.4.33",
+      "train_metrics": {
+        "precision": 0.98153,
+        "recall": 0.9819,
+        "map50": 0.98688,
+        "map50_95": 0.79788
+      }
+    },
+    "data_yaml_exists_at_recorded_path": false,
+    "source_hashes": {
+      "args_yaml": "4af0a490853ad3a209a3c4d066694228953bf813f6a166d004f3859b8174df22",
+      "results_csv": "003241d1f3841540ef0e7781582426c9c357cdae0d631864b019fca6baa80234",
+      "retained_checkpoint": "bf153335cf4cabf1de109c513e9efc281f88596082a1b67f220888ce4dcbe87a"
+    }
+  },
+  "lettuce": {
+    "config": {
+      "imgsz": 960,
+      "epochs": 80,
+      "patience": 20,
+      "batch": 8,
+      "pretrained": true,
+      "optimizer": "auto",
+      "lr0": 0.001,
+      "lrf": 0.01,
+      "momentum": 0.937,
+      "weight_decay": 0.0005,
+      "cos_lr": true,
+      "warmup_epochs": 3.0,
+      "amp": true,
+      "deterministic": true,
+      "seed": 42,
+      "overlap_mask": true,
+      "mask_ratio": 4,
+      "degrees": 5.0,
+      "translate": 0.05,
+      "scale": 0.35
+    },
+    "architecture": "yolov8m-seg.yaml",
+    "class_names": {
+      "0": "lettuce"
+    },
+    "logged_epochs": 60,
+    "retained_checkpoint": {
+      "epoch": -1,
+      "ultralytics_version": "8.4.46",
+      "train_metrics": {
+        "precision": 0.85872,
+        "recall": 0.87678,
+        "map50": 0.93462,
+        "map50_95": 0.72647
+      }
+    },
+    "data_yaml_exists_at_recorded_path": false,
+    "source_hashes": {
+      "args_yaml": "c65a694c86c377223d83ee5d4db583cbafd837bed4cf62b86c08c617297ca2d1",
+      "results_csv": "11b7c3f378219677ac2874c2675b9caaa70a87cf8d041c397d65e0681cb921d5",
+      "retained_checkpoint": "a2ded62bba4d577f4ead18907b824c587e179357c8089b72dabde41b755d6fe8"
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "status": "FROZEN_ON_VALIDATION_BEFORE_TEST",
+  "best_by_variant": {
+    "344columns": {
+      "tag": "344columns_blend50",
+      "variant": "344columns",
+      "mode": "blend50",
+      "n_features": 222,
+      "fitted_components": 2,
+      "n": 219,
+      "mae": 12.399763881918789,
+      "rmse": 17.434409278717098,
+      "r2": 0.8532984148973572,
+      "bias": -1.091908843450815,
+      "wape_percent": 11.262788004297722
+    },
+    "454columns": {
+      "tag": "454columns_blend50",
+      "variant": "454columns",
+      "mode": "blend50",
+      "n_features": 311,
+      "fitted_components": 2,
+      "n": 219,
+      "mae": 11.705142594441526,
+      "rmse": 16.66835393699492,
+      "r2": 0.8659071072238764,
+      "bias": -1.271703154409386,
+      "wape_percent": 10.631858868982755
+    }
+  },
+  "selected_C": {
+    "tag": "454columns_blend50",
+    "variant": "454columns",
+    "mode": "blend50",
+    "n_features": 311,
+    "fitted_components": 2,
+    "n": 219,
+    "mae": 11.705142594441526,
+    "rmse": 16.66835393699492,
+    "r2": 0.8659071072238764,
+    "bias": -1.271703154409386,
+    "wape_percent": 10.631858868982755
+  },
+  "recommended_model": "454columns_blend50",
+  "cnn_validation": {
+    "n": 219,
+    "mae": 15.30883060384491,
+    "rmse": 22.24929601026424,
+    "r2": 0.7610797940216206,
+    "bias": -3.0133380843930317,
+    "wape_percent": 13.90511265591368
+  },
+  "parsimony_tolerance_g": 0.5,
+  "selected_at": "2026-09-20T15:51:33.671533",
+  "test_loaded": false,
+  "contract_sha256": "9f2fdff62c7aa55d5044f436c041938fc02ded1a4b562702d2d274ec03d770f7"
+}

@@ -1,0 +1,30 @@
+{
+  "name": "rect896",
+  "imgsz": 896,
+  "rect": true,
+  "confidence": 0.35,
+  "shape_gate": {
+    "min_width": 0.85,
+    "min_height": 0.12,
+    "max_height": 0.44,
+    "min_cy": 0.32,
+    "max_cy": 0.86
+  },
+  "crop_profiles": {
+    "early": {
+      "up": 0.0,
+      "down": 0.0
+    },
+    "middle": {
+      "up": 0.0,
+      "down": 0.0
+    },
+    "tall": {
+      "up": 0.0,
+      "down": 0.0
+    }
+  },
+  "model_sha256": "648f6ce3fb520ef603a427f578aaa60c58ebc96e0226122a51c6d53b1b0e5109",
+  "camera_contract": "all front early and late -> CAM2",
+  "crop_rule": "MODEL_BBOX_EXACT_NO_PADDING"
+}
