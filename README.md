@@ -4,7 +4,7 @@ Official code, frozen model, and evaluation repository for the manuscript **"Let
 
 This repository provides the end-to-end multi-view image preprocessing and 4-stage modeling pipeline across three commercial-scale cultivation cycles, all 42 frozen model checkpoints and transformation matrices, and standalone verification scripts that reproduce the quantitative evaluation tables and analytical figures reported in the paper.
 
-## Quick Terminology Guide (`CNN` / `A-step` / `C-step` / `D-step` & Cycle IDs)
+## Quick Terminology Guide (`CNN` / `A-step` / `C-step`  & Cycle IDs)
 
 Because folder names, checkpoint directories, and scripts preserve the internal research stage identifiers (`A-step`, `C-step`, `D-step`), the table below maps those codebase identifiers to the model roles and cultivation cycle numbers used in the manuscript:
 
