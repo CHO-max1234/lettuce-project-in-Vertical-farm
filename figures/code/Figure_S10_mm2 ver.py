@@ -5,13 +5,13 @@ import sys
 sys.dont_write_bytecode = True
 PROJECT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT))
-from Figure_14_storage import STORAGE_ROOT, moved_path
+from Figure_S10_storage import STORAGE_ROOT, moved_path
 
 # Source and export settings. Original plots, labels and QC outputs stay unchanged.
 SOURCE_ROOT = STORAGE_ROOT / '3작기 실증 적용' / '4. 시각화와 QC' / '2. 생육 QC'
 SOURCE_CSV = SOURCE_ROOT / 'growth_qc.csv'
 VIS_COMPLETION = SOURCE_ROOT.parent / '1. Feature 시각화' / 'visualization_completion.json'
-STEM = 'Figure 14'
+STEM = 'FigS10_mm2 ver'
 OUTPUT_ROOT = SOURCE_ROOT
 FIGURE_WIDTH_IN = 7.2
 FIGURE_HEIGHT_IN = 5.9
@@ -215,7 +215,7 @@ def draw(dates, by_bed, overall, counts, photos, root):
             spine.set_visible(False)
         fig.text(left,.345,f'({chr(ord("c")+j)})',fontweight='bold',fontsize=12,va='center')
         fig.text(left+.15,.345,pd.Timestamp(p['date']).strftime('%b %d'),ha='center',va='center',fontsize=9.5)
-        fig.text(left+.1325,.055,f'Area: {p["area_cm2"]:.0f} cm$^2$',ha='center',va='center',fontsize=9)
+        fig.text(left+.1325,.055,f'Area: {p["area_cm2"] * 100.0:.0f} mm$^2$',ha='center',va='center',fontsize=9)
         fig.text(left+.1325,.024,PHOTO_LABELS[p['state']],ha='center',va='center',fontsize=8.5)
     text_report = assert_text_layout(fig)
     renderer = fig.canvas.get_renderer()

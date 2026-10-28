@@ -301,7 +301,7 @@ def main():
     save_csv(summary,out/(Path(OUTPUT_NAME).stem+'_daily_summary.csv'))
     save_csv(cohort,out/(Path(OUTPUT_NAME).stem+'_cohort.csv'))
     paper_style()
-    draw_history(summary,'embedding',out/OUTPUT_NAME)
+    draw_history(summary,'area',out/OUTPUT_NAME)
     assert all(sha(Path(p))==h for p,h in hashes.items()), 'Source changed'
     report=dict(status='REPRODUCED',source_hashes=hashes,unique_train_plants=len(cohort),plant_date_rows=len(daily),observed_dates=daily.date.nunique(),checks=checks,model_inference=False,pca_refitted=False,display_interpolation='Linear internal gaps of summary only; observed dots and raw values unchanged',output_sha256=sha(out/OUTPUT_NAME))
     (out/(Path(OUTPUT_NAME).stem+'.json')).write_text(json.dumps(report,indent=2),encoding='utf-8')

@@ -1,4 +1,4 @@
-"""Reproduce manuscript Figure 12 from saved predictions; no refitting."""
+"""Reproduce manuscript Figure S8 from saved predictions; no refitting."""
 from pathlib import Path
 
 ROOT = Path(r"D:\Googledrive\newfolder\양상추사진\양상추_테라웨이브\전처리,모델 성능개선\260915_0925_5. 분류와 회귀, 수확판단\3. C-step direct&residual regression")
@@ -20,7 +20,7 @@ SELECTION = OUTPUT / "selection_before_test.json"
 DPI = 600
 
 MODELS = [
-    ("A-step", "A_step", "cnn_only", "#62676D", "o"),
+    ("Baseline CNN", "A_step", "cnn_only", "#62676D", "o"),
     ("Direct", "454columns", "direct", "#0072B2", "s"),
     ("Residual", "454columns", "residual", "#009E73", "^"),
     ("50:50 blend", "454columns", "blend50", "#D55E00", "D"),
@@ -145,50 +145,30 @@ def save_figure(fig, filename):
         return dict(file=path.name, width_px=im.width, height_px=im.height,
                     dpi=list(im.info.get("dpi", [])), sha256=sha256(path))
 
-def stage_figure(long, stage_metrics):
-    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.9))
-    counts = stage_metrics.loc[stage_metrics.Model.eq("A-step"), "n"].to_numpy()
-    x = np.arange(5)
-    width = 0.185
-    handles = []
-    for i, (label, _, _, color, _) in enumerate(MODELS):
-        positions = x + (i - 1.5) * width
-        sm = stage_metrics.loc[stage_metrics.Model.eq(label)].sort_values("cnn_pred_stage")
-        axes[0].bar(positions, sm.rmse, width=width * 0.92, color=color,
-                    edgecolor="white", linewidth=0.3, zorder=3)
-        errors = [long.loc[long.Model.eq(label) & long.cnn_pred_stage.eq(s), "error_g"].to_numpy()
-                  for s in range(5)]
-        axes[1].boxplot(errors, positions=positions, widths=width * 0.82, patch_artist=True,
-                        manage_ticks=False, whis=1.5, showfliers=True,
-                        boxprops=dict(facecolor=color, edgecolor=color, alpha=0.7, linewidth=0.65),
-                        medianprops=dict(color="#111111", linewidth=0.9),
-                        whiskerprops=dict(color=color, linewidth=0.7),
-                        capprops=dict(color=color, linewidth=0.7),
-                        flierprops=dict(marker="o", markersize=2.1, markerfacecolor="none",
-                                        markeredgecolor=color, markeredgewidth=0.65))
-        handles.append(Patch(facecolor=color, label=label))
-    for i, ax in enumerate(axes):
-        ax.set_xticks(x, [f"{s}\n(n = {n})" for s, n in enumerate(counts)])
-        ax.set_xlim(-0.65, 4.65)
-        ax.set_xlabel("CNN-predicted stage", labelpad=7)
-        ax.text(-0.15, 1.025, f"({chr(97+i)})", transform=ax.transAxes, weight="bold", fontsize=10)
-        ax.set_axisbelow(True)
-        ax.grid(axis="y", color="#E7E7E7", linewidth=0.5)
-        ax.tick_params(axis="x", length=0, pad=5)
-    axes[0].set_ylabel("RMSE (g)")
-    axes[0].set_ylim(0, math.ceil(stage_metrics.rmse.max() / 5) * 5 + 1)
-    axes[0].yaxis.set_major_locator(MultipleLocator(5))
-    axes[1].set_ylabel("Prediction error (g)")
-    extent = math.ceil(float(long.error_g.abs().max()) / 25) * 25
-    axes[1].set_ylim(-extent - 4, extent + 4)
-    axes[1].yaxis.set_major_locator(MultipleLocator(50 if extent > 100 else 25))
-    axes[1].axhline(0, color="#333333", lw=0.9, ls=(0, (4, 3)), zorder=1)
-    fig.legend(handles=handles, loc="upper center", bbox_to_anchor=(0.52, 0.99),
-               ncol=4, frameon=False, handlelength=1.5, columnspacing=2.2)
-    fig.subplots_adjust(left=0.082, right=0.99, bottom=0.235, top=0.85, wspace=0.30)
-    return save_figure(fig, "Figure_2_current_2nd_stage_errors.png")
+def scatter_figure(long):
+    fig, axes = plt.subplots(2, 2, figsize=(7.2, 6.5), sharex=True, sharey=True)
+    extrema = long[["y_true", "prediction"]].to_numpy()
+    low = math.floor(min(0.0, float(extrema.min())) / 25) * 25
+    high = math.ceil(float(extrema.max()) / 25) * 25
+    if high == extrema.max():
+        high += 25
+    for i, (ax, (label, _, _, color, marker)) in enumerate(zip(axes.flat, MODELS)):
+        part = long.loc[long.Model.eq(label)]
+        ax.plot([low, high], [low, high], color="#525252", lw=0.85, ls=(0, (4, 3)), zorder=1)
+        ax.scatter(part.y_true, part.prediction, s=14, color=color, alpha=0.56,
+                   edgecolors="none", marker=marker, zorder=2)
+        ax.set(xlim=(low, high), ylim=(low, high), aspect="equal")
+        ax.xaxis.set_major_locator(MultipleLocator(50))
+        ax.yaxis.set_major_locator(MultipleLocator(50))
+        ax.text(0.045, 0.95, f"({chr(97+i)})  {label}", transform=ax.transAxes,
+                ha="left", va="top", fontsize=10, weight="bold")
+        ax.tick_params(direction="out", length=3, labelbottom=True, labelleft=True)
+    fig.supxlabel("Observed fresh weight (g)", y=0.028, fontsize=10)
+    fig.supylabel("Predicted fresh weight (g)", x=0.025, fontsize=10)
+    fig.subplots_adjust(left=0.105, right=0.985, bottom=0.105, top=0.98, wspace=0.17, hspace=0.18)
+    return save_figure(fig, "Figure_01_current_2nd_observed_predicted.png")
 
-OUTPUT_NAME = 'Figure 12.png'
+OUTPUT_NAME = 'FigS8.png'
 
 def output_directory():
     import argparse
@@ -205,7 +185,7 @@ def main():
     OUTPUT = output_directory()
     long,summary,stage_metrics,hashes=read_and_verify()
     set_style()
-    image=stage_figure(long,stage_metrics)
+    image=scatter_figure(long)
     long.to_csv(OUTPUT/(Path(OUTPUT_NAME).stem+'_observations.csv'),index=False,encoding='utf-8-sig')
     stage_metrics.to_csv(OUTPUT/(Path(OUTPUT_NAME).stem+'_stage_metrics.csv'),index=False,encoding='utf-8-sig')
     assert all(sha256(Path(p))==h for p,h in hashes.items()), 'Source changed'

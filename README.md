@@ -32,8 +32,8 @@ The table maps the retained code identifiers to their model roles. Cultivation-c
 ├── validation_cycle3(260723_260826)/   # Manuscript Cycle 3 — External validation 2 (23 Jul – 26 Aug 2026; internal ID: 4작기)
 │   ├── preprocessing/                  # Confirmed OCR ledger and summer-cycle preprocessing/QC
 │   └── model/                          # Frozen-model transfer evaluation (CNN -> A-step -> C-step)
-├── figures/                            # Manuscript (Fig. 1–15) and supplementary (Fig. S1–S7) figures
-│   └── code/                           # Analytical figure scripts (Figure_04.py – Figure_S07.py) & daily env CSV
+├── figures/                            # Manuscript (Fig. 1–11) and supplementary (Fig. S1–S11) figures
+│   └── code/                           # Figure scripts (Figure_04.py – Figure_S11.py) and daily environment CSV
 └── evaluation/                         # Quantitative table verification (Tables 3–9, Table S4)
     ├── code/                           # Metric recalculation scripts (Table_03.py – Table_09.py, Table_S04.py)
     └── data/                           # Minimal reference & prediction CSVs for standalone table verification
@@ -54,13 +54,13 @@ To align with the manuscript's **Data Availability Statement**, the materials in
   * **OCR:** Local EasyOCR detector/recognizer weights (`ocr/`).
   * Keep all checkpoints paired with their feature-order and preprocessing files. Cycle 3 also supplies a distinct front-view bed model in `validation_cycle3(260723_260826)/artifacts/`.
 
-* **Evaluation Data (`evaluation/data/`) and Figure Data (`figures/code/Figure_S03_daily.csv`):** Retained inputs support standalone table calculations and the environmental plot without the full RGB archive or GPU inference:
+* **Evaluation Data (`evaluation/data/`) and Figure Data (`figures/code/Figure_S04_daily.csv`):** Retained inputs support standalone table calculations and the environmental plot without the full RGB archive or GPU inference:
   * `Table_03_*.csv` and `Table_S04_*`: preprocessing inventories, segmentation logs and configuration metadata.
   * `Table_04_predictions.csv`: saved hard/soft-label stage-classifier predictions and reference labels.
   * `Table_05_predictions.csv`, `Table_06_predictions.csv`, `Table_07_predictions.csv`: saved weight predictions, stage probabilities and harvest-rule inputs.
   * `Table_08_cases.csv` and `Table_08_daily_history.csv`: retained example cases and daily histories for projected-area QC calculations.
   * `Table_09_*.csv`: saved external-validation predictions.
-  * `Figure_S03_daily.csv`: daily summary for regenerating Figure S3.
+  * `Figure_S04_daily.csv`: daily summary for regenerating Figure S4.
 
 Saved-prediction recalculation does not repeat training, original sampling or manual case selection. Some descriptive entries and archived training details cannot be independently reconstructed from these retained files; see the [table guide](evaluation/README.md).
 
@@ -72,7 +72,7 @@ All example commands below run from the repository root.
 | :--- | :--- | :--- |
 | Check bundled model files | Included artifacts and manifest | `python "main_cycle(260306_260504)/pipeline/1. Run_cycle.py" --check-models` |
 | Recalculate a numerical table | Included saved evaluation data | `python "evaluation/code/Table_04.py" --output-dir "runs/Table_04"` |
-| Regenerate Figure S3 | Included daily summary | `python "figures/code/Figure_S03.py" --output "runs/FigS3.png"` |
+| Regenerate Figure S4 | Included daily summary | `python "figures/code/Figure_S04.py" --output "runs/FigS4.png"` |
 | Run preprocessing and inference | External images, sensor/survey data and required reviewed records | See the cycle-specific guides linked below |
 | Regenerate photo panels or a website capture | Corresponding source images, manifests or website build | See the [figure guide](figures/README.md) |
 
@@ -159,7 +159,7 @@ python "evaluation/code/Table_08.py" --output-dir "runs/Table_08"
 python "evaluation/code/Table_09.py" --output-dir "runs/Table_09"
 ```
 
-See the [table guide](evaluation/README.md) for the retained-data limits. Use the separate plotting environment in the [figure guide](figures/README.md); Figure S3 uses the included daily CSV, while other scripts may need external images, logs, workbooks or the original website build.
+See the [table guide](evaluation/README.md) for the retained-data limits. Use the separate plotting environment in the [figure guide](figures/README.md); Figure S4 uses the included daily CSV, while other scripts may need external images, logs, workbooks or the original website build.
 
 ### 4. Run a Cycle
 

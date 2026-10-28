@@ -16,7 +16,9 @@ import xml.etree.ElementTree as ET
 INPUT = Path(r'D:\Googledrive\양상추 분류모델\관련논문\논문 구성\논문그림.pptx')
 OUTPUT_DIR = Path(__file__).resolve().parents[1] / 'reproduced'
 DPI = 600
-FIGURE_WIDTH_IN = 7.2
+FIGURE_WIDTH_MM = 100
+FIGURE_WIDTH_IN = FIGURE_WIDTH_MM / 25.4
+FIGURE_ASPECT = .29
 NS = {'p':'http://schemas.openxmlformats.org/presentationml/2006/main',
       'a':'http://schemas.openxmlformats.org/drawingml/2006/main',
       'r':'http://schemas.openxmlformats.org/officeDocument/2006/relationships'}
@@ -60,26 +62,31 @@ def main():
     args.output_dir.mkdir(parents=True,exist_ok=True)
     output=args.output_dir/'Figure 5.png'
     if output.exists():raise FileExistsError('Choose another output directory')
-    plt.rcParams.update({'font.family':'Arial','font.size':10,'figure.facecolor':'white'})
-    fig=plt.figure(figsize=(FIGURE_WIDTH_IN,1.96))
+    plt.rcParams.update({'font.family':'Arial','font.size':8,'figure.facecolor':'white','pdf.fonttype':42})
+    fig=plt.figure(figsize=(FIGURE_WIDTH_IN,FIGURE_WIDTH_IN*FIGURE_ASPECT))
     for i,(photo,date) in enumerate(zip(photos,dates)):
         left=.008+i*.253
-        ax=fig.add_axes([left,.035,.226,.77])
-        # The original slide places each photo in a square; preserve that layout.
-        ax.imshow(photo['pixels'],aspect='auto',interpolation='none');ax.axis('off')
-        fig.text(left+.113,.91,date,ha='center',va='center',fontsize=10)
+        ax=fig.add_axes([left,.035,.226,.226/FIGURE_ASPECT])
+        # Preserve native proportions inside a black square, without stretching.
+        pixels=photo['pixels'];h,w=pixels.shape[:2];side=max(h,w)
+        square=np.zeros((side,side,3),dtype=np.uint8)
+        square[(side-h)//2:(side-h)//2+h,(side-w)//2:(side-w)//2+w]=pixels
+        ax.imshow(square,interpolation='none');ax.axis('off')
+        photo['effective_native_ppi_at_100mm']=side/(.226*FIGURE_WIDTH_IN)
+        fig.text(left+.113,.92,date,ha='center',va='center',fontsize=8)
         if i<3:
-            x=left+.226;y=.40;w=.027;h=.105
+            x=left+.226;y=.425;w=.027;h=.105
             points=[(x,y-h/4),(x+w*.55,y-h/4),(x+w*.55,y-h/2),(x+w,y),(x+w*.55,y+h/2),(x+w*.55,y+h/4),(x,y+h/4)]
             fig.add_artist(Polygon(points,closed=True,transform=fig.transFigure,facecolor='white',edgecolor='#34758D',linewidth=.8))
     fig.savefig(output,dpi=DPI)
+    fig.savefig(args.output_dir/'Figure 5.pdf',dpi=DPI)
     plt.close(fig)
     assert sha(args.input)==digest
     report=dict(status='COMPOSITION_REPRODUCED_IDENTITY_UNVERIFIED',source_pptx=str(args.input),source_sha256=digest,
         output_sha256=sha(output),dates=dates,photos=[{k:v for k,v in p.items() if k!='pixels'} for p in photos],
         plant_identity_verified=False,original_crop_paths_verified=False,pixel_identical_to_collected_figure=False,
-        layout='Original image order and square placement; newly rendered date labels and outlined arrows; original PNG preserved',
-        dpi=DPI,native_detail_limited=True)
+        layout='Original photo order, dates and arrows; native photo aspect ratios retained with black letterboxing; original PPTX unchanged',
+        dpi=DPI,width_mm=FIGURE_WIDTH_MM,recommended_print_width_mm=100,native_detail_limited=True)
     (args.output_dir/'Figure 5.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
     print(json.dumps({k:v for k,v in report.items() if k!='photos'},ensure_ascii=False,indent=2))
 

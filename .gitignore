@@ -19,3 +19,6 @@ __pycache__/
 /runs/
 outputs/
 /figures/reproduced/
+
+# Internal figure validation and backup records (kept locally).
+/figures/_검증자료/
